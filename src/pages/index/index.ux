@@ -1,0 +1,373 @@
+<template>
+  <div class="page">
+    <div class="top">
+      <text class="title">查单词</text>
+      <text class="count">{{ totalText }}</text>
+    </div>
+
+    <div class="input-box">
+      <text class="input-text" if="{{ input }}">{{ input }}</text>
+      <text class="input-ph" if="{{ !input }}">输入小写字母</text>
+    </div>
+
+    <div class="result">
+      <div class="hit" if="{{ state === 'hit' }}">
+        <div class="wline">
+          <text class="word">{{ word }}</text>
+          <text class="phon">{{ phonetic }}</text>
+        </div>
+        <scroll class="def-scroll" scroll-y="true">
+          <text class="def">{{ defText }}</text>
+          <text class="note" if="{{ noteText }}">{{ noteText }}</text>
+        </scroll>
+      </div>
+
+      <div class="miss" if="{{ state === 'miss' }}">
+        <text class="miss-t">没收录这个词</text>
+        <div class="miss-line" if="{{ hintWord }}">
+          <text class="miss-s">最接近 {{ hintWord }}</text>
+          <div class="jump" onclick="useHint">
+            <text class="jump-t">查看</text>
+          </div>
+        </div>
+      </div>
+
+      <div class="idle" if="{{ state === 'idle' }}">
+        <text class="idle-t">输入字母开始查</text>
+        <text class="idle-s">只收纯小写单词 · 音标为字母近似记法</text>
+      </div>
+    </div>
+
+    <scroll class="kb" scroll-y="true">
+        <div class="kb-row">
+          <div class="key" onclick="key('a')"><text class="key-t">a</text></div>
+          <div class="key" onclick="key('b')"><text class="key-t">b</text></div>
+          <div class="key" onclick="key('c')"><text class="key-t">c</text></div>
+          <div class="key" onclick="key('d')"><text class="key-t">d</text></div>
+          <div class="key" onclick="key('e')"><text class="key-t">e</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key" onclick="key('f')"><text class="key-t">f</text></div>
+          <div class="key" onclick="key('g')"><text class="key-t">g</text></div>
+          <div class="key" onclick="key('h')"><text class="key-t">h</text></div>
+          <div class="key" onclick="key('i')"><text class="key-t">i</text></div>
+          <div class="key" onclick="key('j')"><text class="key-t">j</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key" onclick="key('k')"><text class="key-t">k</text></div>
+          <div class="key" onclick="key('l')"><text class="key-t">l</text></div>
+          <div class="key" onclick="key('m')"><text class="key-t">m</text></div>
+          <div class="key" onclick="key('n')"><text class="key-t">n</text></div>
+          <div class="key" onclick="key('o')"><text class="key-t">o</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key" onclick="key('p')"><text class="key-t">p</text></div>
+          <div class="key" onclick="key('q')"><text class="key-t">q</text></div>
+          <div class="key" onclick="key('r')"><text class="key-t">r</text></div>
+          <div class="key" onclick="key('s')"><text class="key-t">s</text></div>
+          <div class="key" onclick="key('t')"><text class="key-t">t</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key" onclick="key('u')"><text class="key-t">u</text></div>
+          <div class="key" onclick="key('v')"><text class="key-t">v</text></div>
+          <div class="key" onclick="key('w')"><text class="key-t">w</text></div>
+          <div class="key" onclick="key('x')"><text class="key-t">x</text></div>
+          <div class="key" onclick="key('y')"><text class="key-t">y</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key" onclick="key('z')"><text class="key-t">z</text></div>
+        </div>
+    </scroll>
+
+    <div class="fn-row">
+      <div class="fn" onclick="backspace"><text class="fn-t">删除</text></div>
+      <div class="fn" onclick="clearAll"><text class="fn-t">清空</text></div>
+    </div>
+  </div>
+</template>
+
+<script>
+const dict = require("../../common/dict.js")
+
+export default {
+  private: {
+    input: "",
+    state: "idle",
+    word: "",
+    phonetic: "",
+    defText: "",
+    noteText: "",
+    hintWord: "",
+    totalText: ""
+  },
+
+  onInit() {
+    this.totalText = "3500+六级 · " + dict.size() + " 条"
+  },
+
+  key(ch) {
+    if (this.input.length >= 24) return
+    this.input = this.input + ch
+    this.refresh()
+  },
+
+  backspace() {
+    if (!this.input) return
+    this.input = this.input.slice(0, this.input.length - 1)
+    this.refresh()
+  },
+
+  clearAll() {
+    if (!this.input) return
+    this.input = ""
+    this.refresh()
+  },
+
+  useHint() {
+    if (!this.hintWord) return
+    this.input = this.hintWord
+    this.refresh()
+  },
+
+  refresh() {
+    const q = this.input
+    if (!q) {
+      this.state = "idle"
+      this.hintWord = ""
+      return
+    }
+    const index = dict.find(q)
+    if (index >= 0) {
+      const e = dict.entry(index)
+      this.word = e.word
+      this.phonetic = e.phonetic ? "/" + e.phonetic + "/" : ""
+      this.defText = e.def
+      this.noteText = e.note
+      this.state = "hit"
+      return
+    }
+    this.hintWord = dict.wordAt(dict.nearestIndex(q))
+    this.state = "miss"
+  }
+}
+</script>
+
+<style>
+.page {
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  flex-direction: column;
+  justify-content: flex-start;
+  background-color: #000000;
+}
+
+.top {
+  width: 100%;
+  height: 28px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 20px;
+  color: #8b949e;
+}
+
+.count {
+  font-size: 15px;
+  color: #4b5359;
+}
+
+.input-box {
+  width: 100%;
+  height: 46px;
+  flex-direction: row;
+  align-items: center;
+  border-radius: 12px;
+  background-color: #14181b;
+  padding: 0 12px;
+}
+
+.input-text {
+  font-size: 27px;
+  font-weight: bold;
+  color: #34d399;
+  letter-spacing: 4px;
+}
+
+.input-ph {
+  font-size: 19px;
+  color: #4b5359;
+}
+
+.result {
+  width: 100%;
+  flex: 1;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background-color: #0d1013;
+  flex-direction: column;
+}
+
+.hit {
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+}
+
+.wline {
+  width: 100%;
+  flex-direction: row;
+  align-items: baseline;
+}
+
+.word {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.phon {
+  margin-left: 8px;
+  font-size: 18px;
+  color: #34d399;
+}
+
+.def-scroll {
+  flex: 1;
+  margin-top: 4px;
+  flex-direction: column;
+}
+
+.def {
+  font-size: 19px;
+  color: #c9d1d9;
+  line-height: 26px;
+}
+
+.note {
+  margin-top: 4px;
+  font-size: 17px;
+  color: #6e7681;
+}
+
+.miss {
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.miss-t {
+  font-size: 21px;
+  color: #e6edf3;
+}
+
+.miss-line {
+  margin-top: 8px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.miss-s {
+  font-size: 18px;
+  color: #8b949e;
+}
+
+.jump {
+  margin-left: 10px;
+  width: 68px;
+  height: 34px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 17px;
+  background-color: #16241f;
+}
+
+.jump-t {
+  font-size: 18px;
+  color: #34d399;
+}
+
+.idle {
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.idle-t {
+  font-size: 20px;
+  color: #8b949e;
+}
+
+.idle-s {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #4b5359;
+}
+
+.kb {
+  width: 100%;
+  height: 200px;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+}
+
+.kb-row {
+  width: 100%;
+  height: 56px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.key {
+  width: 58px;
+  height: 56px;
+  margin-left: 3px;
+  margin-right: 3px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #15191c;
+}
+
+.key-t {
+  font-size: 27px;
+  color: #e6edf3;
+}
+
+.fn-row {
+  width: 100%;
+  height: 46px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.fn {
+  width: 150px;
+  height: 46px;
+  margin-left: 5px;
+  margin-right: 5px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 23px;
+  background-color: #1c2227;
+}
+
+.fn-t {
+  font-size: 20px;
+  color: #8b949e;
+}
+</style>
